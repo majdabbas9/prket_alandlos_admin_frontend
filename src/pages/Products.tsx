@@ -8,9 +8,24 @@ interface Product {
   price: number;
   category: string;
   description: string;
-  imageUrl: string;
+  imageKey: string;
   dateOfUpload: string;
 }
+
+const getImageUrl = (imageKey: string) => {
+  if (!imageKey) return '';
+  if (imageKey.startsWith('http')) return imageKey;
+
+  // Handle legacy local uploads
+  if (imageKey.startsWith('/uploads') || imageKey.startsWith('uploads/')) {
+    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+    const path = imageKey.startsWith('/') ? imageKey : `/${imageKey}`;
+    return `${baseUrl}${path}`;
+  }
+
+  // Handle R2 bucket keys via backend proxy
+  return `${API_BASE_URL}/products/photo?key=${encodeURIComponent(imageKey)}`;
+};
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -60,23 +75,18 @@ export default function Products() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    
+
     const formData = new FormData();
     if (currentProduct?.title) formData.append('title', currentProduct.title);
     if (currentProduct?.price !== undefined) formData.append('price', String(currentProduct.price));
     if (currentProduct?.category) formData.append('category', currentProduct.category);
     if (currentProduct?.description) formData.append('description', currentProduct.description);
     if (file) formData.append('image', file);
-
+    console.log(`new product update title = ${currentProduct?.title}, price = ${currentProduct?.price}, category = ${currentProduct?.category}, description = ${currentProduct?.description}, image = ${currentProduct?.imageKey} , id = ${currentProduct?.id}`)
     try {
       if (currentProduct?.id) {
         // Update
-        await api.postFormData(`/products/${currentProduct.id}`, formData); // Assuming PUT with form-data might be tricky, wait, fetch API handles PUT with FormData if method is PUT. Wait! Our postFormData is just POST.
-        // Let's use standard fetch for PUT FormData if needed, but standard HTML form with file usually uses POST. In REST it's PUT.
-        await fetch(`${API_BASE_URL}/products/${currentProduct.id}`, {
-          method: 'PUT',
-          body: formData
-        });
+        await api.putFormData(`/products/${currentProduct.id}`, formData);
       } else {
         // Add
         await api.postFormData('/products', formData);
@@ -108,10 +118,10 @@ export default function Products() {
         {products.map((product) => (
           <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden flex flex-col">
             <div className="h-48 bg-sand-100 relative">
-              {product.imageUrl ? (
-                <img 
-                  src={product.imageUrl.startsWith('http') ? product.imageUrl : `${API_BASE_URL.replace('/api', '')}${product.imageUrl}`} 
-                  alt={product.title} 
+              {product.imageKey ? (
+                <img
+                  src={getImageUrl(product.imageKey)}
+                  alt={product.title}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -127,14 +137,14 @@ export default function Products() {
               </div>
               <p className="text-sm text-ink-500 mb-4">{product.category}</p>
               <div className="mt-auto flex justify-end gap-2 pt-4 border-t border-sand-100">
-                <button 
+                <button
                   onClick={() => handleOpenModal(product)}
                   className="p-2 text-ink-600 hover:text-walnut-700 hover:bg-sand-50 rounded-lg transition-colors"
                   title="Edit"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
-                <button 
+                <button
                   onClick={() => handleDelete(product.id)}
                   className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete"
@@ -163,58 +173,58 @@ export default function Products() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSaveProduct} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-1">Title</label>
-                <input 
-                  type="text" 
-                  value={currentProduct?.title || ''} 
-                  onChange={e => setCurrentProduct(p => ({...p, title: e.target.value}))}
-                  className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border" 
-                  required 
+                <input
+                  type="text"
+                  value={currentProduct?.title || ''}
+                  onChange={e => setCurrentProduct(p => ({ ...p, title: e.target.value }))}
+                  className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border"
+                  required
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1">Price</label>
-                  <input 
-                    type="number" 
-                    value={currentProduct?.price || 0} 
-                    onChange={e => setCurrentProduct(p => ({...p, price: parseFloat(e.target.value)}))}
-                    className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border" 
+                  <input
+                    type="number"
+                    value={currentProduct?.price || 0}
+                    onChange={e => setCurrentProduct(p => ({ ...p, price: parseFloat(e.target.value) }))}
+                    className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1">Category</label>
-                  <input 
-                    type="text" 
-                    value={currentProduct?.category || ''} 
-                    onChange={e => setCurrentProduct(p => ({...p, category: e.target.value}))}
-                    className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border" 
+                  <input
+                    type="text"
+                    value={currentProduct?.category || ''}
+                    onChange={e => setCurrentProduct(p => ({ ...p, category: e.target.value }))}
+                    className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-1">Description</label>
-                <textarea 
-                  value={currentProduct?.description || ''} 
-                  onChange={e => setCurrentProduct(p => ({...p, description: e.target.value}))}
-                  className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border h-24" 
+                <textarea
+                  value={currentProduct?.description || ''}
+                  onChange={e => setCurrentProduct(p => ({ ...p, description: e.target.value }))}
+                  className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border h-24"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-1">Product Image</label>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept="image/*"
                   onChange={e => setFile(e.target.files?.[0] || null)}
                   className="w-full"
                 />
-                {currentProduct?.imageUrl && !file && (
+                {currentProduct?.imageKey && !file && (
                   <p className="text-xs text-ink-500 mt-2">Current image will be kept if no new file is selected.</p>
                 )}
               </div>

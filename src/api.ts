@@ -26,6 +26,14 @@ export const api = {
     if (!response.ok) throw new Error(`POST FormData ${endpoint} failed`);
     return response.json();
   },
+  putFormData: async (endpoint: string, formData: FormData) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PUT',
+      body: formData,
+    });
+    if (!response.ok) throw new Error(`PUT FormData ${endpoint} failed`);
+    return response.json();
+  },
   put: async (endpoint: string, data: any) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',

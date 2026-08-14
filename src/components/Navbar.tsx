@@ -94,6 +94,19 @@ export default function Navbar() {
               </NavLink>
             </li>
           ))}
+          <li>
+            <button
+              onClick={() => {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/login';
+              }}
+              className={`text-sm font-medium tracking-wide transition-colors duration-200 ${
+                scrolled ? 'text-ink-700 hover:text-red-600' : 'text-sand-50/90 hover:text-red-400'
+              }`}
+            >
+              Logout
+            </button>
+          </li>
         </ul>
 
 
@@ -135,7 +148,17 @@ export default function Navbar() {
               </NavLink>
             </li>
           ))}
-
+          <li className="mt-2 border-t border-ink-100 pt-2">
+            <button
+              onClick={() => {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/login';
+              }}
+              className="block w-full text-left rounded-xl px-4 py-3.5 text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
+            >
+              Logout
+            </button>
+          </li>
         </ul>
       </div>
     </header>

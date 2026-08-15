@@ -48,7 +48,9 @@ export function useInfo() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    fetch(`${SERVER_URL}/api/info`)
+    const url = `${SERVER_URL}/api/info`;
+    console.log(`[API Request] GET ${url}`);
+    fetch(url)
       .then((res) => {
         if (!res.ok) {
           throw new Error('Failed to fetch store info');

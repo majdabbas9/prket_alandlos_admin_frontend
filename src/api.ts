@@ -32,13 +32,17 @@ const handleResponse = async (response: Response, errorMessage: string) => {
 
 export const api = {
   get: async (endpoint: string) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] GET ${url}`);
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     return handleResponse(response, `GET ${endpoint} failed`);
   },
   post: async (endpoint: string, data: any) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] POST ${url}`, data);
+    const response = await fetch(url, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -46,7 +50,9 @@ export const api = {
     return handleResponse(response, `POST ${endpoint} failed`);
   },
   postFormData: async (endpoint: string, formData: FormData) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] POST (FormData) ${url}`, formData);
+    const response = await fetch(url, {
       method: 'POST',
       headers: getAuthHeaders(true),
       body: formData,
@@ -54,7 +60,9 @@ export const api = {
     return handleResponse(response, `POST FormData ${endpoint} failed`);
   },
   putFormData: async (endpoint: string, formData: FormData) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] PUT (FormData) ${url}`, formData);
+    const response = await fetch(url, {
       method: 'PUT',
       headers: getAuthHeaders(true),
       body: formData,
@@ -62,7 +70,9 @@ export const api = {
     return handleResponse(response, `PUT FormData ${endpoint} failed`);
   },
   put: async (endpoint: string, data: any) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] PUT ${url}`, data);
+    const response = await fetch(url, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
@@ -70,7 +80,9 @@ export const api = {
     return handleResponse(response, `PUT ${endpoint} failed`);
   },
   delete: async (endpoint: string) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`[API Request] DELETE ${url}`);
+    const response = await fetch(url, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -80,7 +92,9 @@ export const api = {
 
 export const authApi = {
   login: async (username: string, password: string) => {
-    const response = await fetch(`${ADMIN_BACKEND_URL}/auth/login`, {
+    const url = `${ADMIN_BACKEND_URL}/auth/login`;
+    console.log(`[API Request] POST ${url}`, { username });
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,7 +108,9 @@ export const authApi = {
     return result;
   },
   validate: async (token: string) => {
-    const response = await fetch(`${ADMIN_BACKEND_URL}/auth/validate`, {
+    const url = `${ADMIN_BACKEND_URL}/auth/validate`;
+    console.log(`[API Request] POST ${url}`);
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

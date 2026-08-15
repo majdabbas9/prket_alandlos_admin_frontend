@@ -7,6 +7,9 @@ WORKDIR /app
 ARG VITE_SERVER_URL
 ENV VITE_SERVER_URL=$VITE_SERVER_URL
 
+ARG VITE_ADMIN_BACKEND_URL
+ENV VITE_ADMIN_BACKEND_URL=$VITE_ADMIN_BACKEND_URL
+
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci

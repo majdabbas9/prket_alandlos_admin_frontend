@@ -28,7 +28,8 @@ export interface StoreInfo {
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:8080';
 
 export function parseOpeningTime(timeStr: string) {
-  const regex = /^(.*?)\s+(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*—\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))$/i;
+  const regex =
+    /^(.*?)\s+(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*—\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))$/i;
   const match = timeStr.match(regex);
   if (match) {
     return {

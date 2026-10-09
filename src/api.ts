@@ -39,7 +39,7 @@ export const api = {
     });
     return handleResponse(response, `GET ${endpoint} failed`);
   },
-  post: async (endpoint: string, data: any) => {
+  post: async (endpoint: string, data: unknown) => {
     const url = `${API_BASE_URL}${endpoint}`;
     console.log(`[API Request] POST ${url}`, data);
     const response = await fetch(url, {
@@ -69,7 +69,7 @@ export const api = {
     });
     return handleResponse(response, `PUT FormData ${endpoint} failed`);
   },
-  put: async (endpoint: string, data: any) => {
+  put: async (endpoint: string, data: unknown) => {
     const url = `${API_BASE_URL}${endpoint}`;
     console.log(`[API Request] PUT ${url}`, data);
     const response = await fetch(url, {
@@ -87,7 +87,7 @@ export const api = {
       headers: getAuthHeaders(),
     });
     return handleResponse(response, `DELETE ${endpoint} failed`);
-  }
+  },
 };
 
 export const authApi = {
@@ -114,7 +114,7 @@ export const authApi = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ token }),
     });
@@ -123,5 +123,5 @@ export const authApi = {
       throw new Error(result.message || 'Validation failed');
     }
     return result;
-  }
+  },
 };

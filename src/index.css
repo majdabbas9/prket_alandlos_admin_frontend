@@ -35,7 +35,9 @@
 .reveal {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  transition:
+    opacity 0.7s ease-out,
+    transform 0.7s ease-out;
 }
 .reveal.is-visible {
   opacity: 1;

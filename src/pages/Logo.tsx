@@ -32,10 +32,10 @@ export default function Logo() {
       await api.postFormData('/logo', formData);
       setStatus('success');
       setFile(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setStatus('error');
-      setErrorMessage(err.message || 'Failed to upload logo');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to upload logo');
     }
   };
 
@@ -46,13 +46,17 @@ export default function Logo() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-sand-200">
           <h2 className="text-xl font-semibold mb-4 text-walnut-800">Upload New Logo</h2>
-          
+
           <div className="mb-6">
             <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-sand-300 rounded-xl cursor-pointer bg-sand-50 hover:bg-sand-100 transition-colors">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
                 <Upload className="w-10 h-10 text-walnut-600 mb-3" />
-                <p className="mb-2 text-sm text-ink-600"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                <p className="text-xs text-ink-500">PNG, WEBP, SVG recommended (Transparent Background)</p>
+                <p className="mb-2 text-sm text-ink-600">
+                  <span className="font-semibold">Click to upload</span> or drag and drop
+                </p>
+                <p className="text-xs text-ink-500">
+                  PNG, WEBP, SVG recommended (Transparent Background)
+                </p>
               </div>
               <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
             </label>
@@ -93,9 +97,9 @@ export default function Logo() {
         <div>
           <h2 className="text-xl font-semibold mb-4 text-walnut-800">Current Logo</h2>
           <div className="bg-walnut-800 p-8 rounded-2xl border border-sand-200 flex items-center justify-center min-h-[200px]">
-            <img 
-              src={status === 'success' && previewUrl ? previewUrl : currentLogoUrl} 
-              alt="Current Logo" 
+            <img
+              src={status === 'success' && previewUrl ? previewUrl : currentLogoUrl}
+              alt="Current Logo"
               className="max-h-32 w-auto object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';

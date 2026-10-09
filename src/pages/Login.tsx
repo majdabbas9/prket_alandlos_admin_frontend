@@ -32,9 +32,9 @@ export default function Login() {
       const data = await authApi.login(username, password);
       localStorage.setItem('admin_token', data.token);
       navigate('/', { replace: true });
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || 'Invalid credentials. Please try again.');
+      setError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -56,9 +56,7 @@ export default function Login() {
           <h2 className="font-display text-3xl font-700 tracking-tight text-walnut-900">
             Welcome Back
           </h2>
-          <p className="mt-2 text-sm text-ink-600">
-            Sign in to manage Prket Alandlos Store
-          </p>
+          <p className="mt-2 text-sm text-ink-600">Sign in to manage Prket Alandlos Store</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -71,7 +69,10 @@ export default function Login() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-xs font-semibold uppercase tracking-wider text-ink-600 mb-1.5">
+              <label
+                htmlFor="username"
+                className="block text-xs font-semibold uppercase tracking-wider text-ink-600 mb-1.5"
+              >
                 Username
               </label>
               <div className="relative rounded-xl shadow-sm">
@@ -92,7 +93,10 @@ export default function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-ink-600 mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-xs font-semibold uppercase tracking-wider text-ink-600 mb-1.5"
+              >
                 Password
               </label>
               <div className="relative rounded-xl shadow-sm">

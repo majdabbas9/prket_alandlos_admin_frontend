@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { TreePine, Instagram, Facebook, Twitter, MapPin, Clock, Mail, Phone, MessageCircle } from 'lucide-react';
+import { TreePine, Instagram, MapPin, Clock, Phone, MessageCircle } from 'lucide-react';
 import { useInfo, parseOpeningTime } from '@/hooks/useInfo';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:8080';
@@ -20,7 +20,11 @@ export default function Footer() {
   const { info } = useInfo();
   const parsedHours = info ? parseOpeningTime(info.storeOpeningTime) : null;
 
-  const whatsappUrl = info?.whatsappLink ? (info.whatsappLink.startsWith('http') ? info.whatsappLink : `https://${info.whatsappLink}`) : '#';
+  const whatsappUrl = info?.whatsappLink
+    ? info.whatsappLink.startsWith('http')
+      ? info.whatsappLink
+      : `https://${info.whatsappLink}`
+    : '#';
 
   const socialLinks = [
     { Icon: Instagram, href: 'https://www.instagram.com/prket_alandlos/', label: 'Instagram' },
@@ -73,7 +77,9 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-sand-50">Quick Links</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-sand-50">
+            Quick Links
+          </h3>
           <ul className="mt-5 space-y-3">
             {QUICK_LINKS.map((link) => (
               <li key={link.to}>
@@ -89,7 +95,9 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-sand-50">Visit Us</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-sand-50">
+            Visit Us
+          </h3>
           <ul className="mt-5 space-y-4 text-sm text-sand-100/70">
             <li className="flex gap-3">
               <MapPin className="mt-0.5 h-4.5 w-4.5 shrink-0 text-brass-400" />

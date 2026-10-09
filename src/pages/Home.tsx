@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api, API_BASE_URL } from '@/api';
 import { Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -34,26 +34,30 @@ export default function Home() {
       setStatus('success');
       setFile(null);
       // We don't reset previewUrl immediately so they can see what they uploaded
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setStatus('error');
-      setErrorMessage(err.message || 'Failed to upload image');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to upload image');
     }
   };
 
   return (
     <div className="container-wide py-12 mt-20">
-      <h1 className="text-3xl font-bold font-display text-walnut-900 mb-8">Manage Homepage Image</h1>
+      <h1 className="text-3xl font-bold font-display text-walnut-900 mb-8">
+        Manage Homepage Image
+      </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-sand-200">
           <h2 className="text-xl font-semibold mb-4 text-walnut-800">Upload New Image</h2>
-          
+
           <div className="mb-6">
             <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-sand-300 rounded-xl cursor-pointer bg-sand-50 hover:bg-sand-100 transition-colors">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
                 <Upload className="w-10 h-10 text-walnut-600 mb-3" />
-                <p className="mb-2 text-sm text-ink-600"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                <p className="mb-2 text-sm text-ink-600">
+                  <span className="font-semibold">Click to upload</span> or drag and drop
+                </p>
                 <p className="text-xs text-ink-500">JPEG, PNG, WEBP (Max 5MB)</p>
               </div>
               <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
@@ -93,9 +97,9 @@ export default function Home() {
         <div>
           <h2 className="text-xl font-semibold mb-4 text-walnut-800">Current Homepage Image</h2>
           <div className="bg-sand-100 p-2 rounded-2xl border border-sand-200">
-            <img 
-              src={status === 'success' && previewUrl ? previewUrl : currentImageUrl} 
-              alt="Current Homepage" 
+            <img
+              src={status === 'success' && previewUrl ? previewUrl : currentImageUrl}
+              alt="Current Homepage"
               className="w-full h-auto rounded-xl shadow-sm"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -103,7 +107,8 @@ export default function Home() {
             />
           </div>
           <p className="text-sm text-ink-600 mt-3 italic">
-            This image is displayed as the hero banner on the main website. It will be automatically resized to a width of 1600px by the backend.
+            This image is displayed as the hero banner on the main website. It will be automatically
+            resized to a width of 1600px by the backend.
           </p>
         </div>
       </div>

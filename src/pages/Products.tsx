@@ -82,7 +82,9 @@ export default function Products() {
     if (currentProduct?.category) formData.append('category', currentProduct.category);
     if (currentProduct?.description) formData.append('description', currentProduct.description);
     if (file) formData.append('image', file);
-    console.log(`new product update title = ${currentProduct?.title}, price = ${currentProduct?.price}, category = ${currentProduct?.category}, description = ${currentProduct?.description}, image = ${currentProduct?.imageKey} , id = ${currentProduct?.id}`)
+    console.log(
+      `new product update title = ${currentProduct?.title}, price = ${currentProduct?.price}, category = ${currentProduct?.category}, description = ${currentProduct?.description}, image = ${currentProduct?.imageKey} , id = ${currentProduct?.id}`,
+    );
     try {
       if (currentProduct?.id) {
         // Update
@@ -102,7 +104,11 @@ export default function Products() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -116,7 +122,10 @@ export default function Products() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
-          <div key={product.id} className="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden flex flex-col">
+          <div
+            key={product.id}
+            className="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden flex flex-col"
+          >
             <div className="h-48 bg-sand-100 relative">
               {product.imageKey ? (
                 <img
@@ -132,7 +141,9 @@ export default function Products() {
             </div>
             <div className="p-5 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-lg text-walnut-900 line-clamp-1">{product.title || 'Untitled'}</h3>
+                <h3 className="font-semibold text-lg text-walnut-900 line-clamp-1">
+                  {product.title || 'Untitled'}
+                </h3>
                 <span className="font-medium text-walnut-700">${product.price || 0}</span>
               </div>
               <p className="text-sm text-ink-500 mb-4">{product.category}</p>
@@ -169,7 +180,10 @@ export default function Products() {
               <h2 className="text-xl font-bold text-walnut-900">
                 {currentProduct?.id ? 'Edit Product' : 'Add New Product'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-ink-400 hover:text-ink-600">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-ink-400 hover:text-ink-600"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -180,7 +194,7 @@ export default function Products() {
                 <input
                   type="text"
                   value={currentProduct?.title || ''}
-                  onChange={e => setCurrentProduct(p => ({ ...p, title: e.target.value }))}
+                  onChange={(e) => setCurrentProduct((p) => ({ ...p, title: e.target.value }))}
                   className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border"
                   required
                 />
@@ -192,7 +206,9 @@ export default function Products() {
                   <input
                     type="number"
                     value={currentProduct?.price || 0}
-                    onChange={e => setCurrentProduct(p => ({ ...p, price: parseFloat(e.target.value) }))}
+                    onChange={(e) =>
+                      setCurrentProduct((p) => ({ ...p, price: parseFloat(e.target.value) }))
+                    }
                     className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border"
                   />
                 </div>
@@ -201,7 +217,7 @@ export default function Products() {
                   <input
                     type="text"
                     value={currentProduct?.category || ''}
-                    onChange={e => setCurrentProduct(p => ({ ...p, category: e.target.value }))}
+                    onChange={(e) => setCurrentProduct((p) => ({ ...p, category: e.target.value }))}
                     className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border"
                   />
                 </div>
@@ -211,7 +227,9 @@ export default function Products() {
                 <label className="block text-sm font-medium text-ink-700 mb-1">Description</label>
                 <textarea
                   value={currentProduct?.description || ''}
-                  onChange={e => setCurrentProduct(p => ({ ...p, description: e.target.value }))}
+                  onChange={(e) =>
+                    setCurrentProduct((p) => ({ ...p, description: e.target.value }))
+                  }
                   className="w-full rounded-xl border-sand-300 focus:border-walnut-500 focus:ring-walnut-500 p-2 border h-24"
                 />
               </div>
@@ -221,19 +239,29 @@ export default function Products() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={e => setFile(e.target.files?.[0] || null)}
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
                   className="w-full"
                 />
                 {currentProduct?.imageKey && !file && (
-                  <p className="text-xs text-ink-500 mt-2">Current image will be kept if no new file is selected.</p>
+                  <p className="text-xs text-ink-500 mt-2">
+                    Current image will be kept if no new file is selected.
+                  </p>
                 )}
               </div>
 
               <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-ink-600 hover:bg-sand-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-ink-600 hover:bg-sand-100 rounded-xl"
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="btn-primary flex items-center gap-2"
+                >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {saving ? 'Saving...' : 'Save Product'}
                 </button>

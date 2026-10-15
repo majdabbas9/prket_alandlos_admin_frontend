@@ -1,0 +1,140 @@
+name: CD
+
+# On every push to main (and by hand): build the admin site and publish it to Cloudflare Pages,
+# once per environment. VITE_* URLs are baked in at build time, so each environment's build
+# points at that environment's API and auth Workers. (Tests come later.)
+# Names and hostnames come from prket_alandlos_infra's scripts/env-config.mjs.
+# dev and prod are separate Cloudflare accounts; only dev is wired up so far (matrix.include).
+#   vars:    DEV_/PROD_ CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_DATABASE_ID, URL
+#   secrets: DEV_/PROD_ CLOUDFLARE_API_TOKEN (Cloudflare Pages: Edit, Zone > DNS: Edit)
+on:
+  push:
+    branches: ['main', 'master']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # PROD joins once its PROD_* variables and secrets are set
+        include:
+          - prefix: DEV
+            env: dev
+    concurrency:
+      group: cd-${{ matrix.env }}
+      cancel-in-progress: false
+    env:
+      ENV_NAME: ${{ matrix.env }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets[format('{0}_CLOUDFLARE_API_TOKEN', matrix.prefix)] }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout prket_alandlos_infra scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/prket_alandlos_infra
+          ref: master
+          path: .infra
+          sparse-checkout: scripts
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # wrangler 4 requires Node >= 22
+          cache: npm
+
+      # PROJECT and DOMAIN: custom hostname from <ENV>_URL; empty = pages.dev only
+      - name: Resolve ${{ matrix.env }} settings
+        run: |
+          node .infra/scripts/env-config.mjs > "$RUNNER_TEMP/config"
+          get() { sed -n "s/^$1=//p" "$RUNNER_TEMP/config"; }
+          {
+            echo "CLOUDFLARE_ACCOUNT_ID=$(get account_id)"
+            echo "ZONE_ID=$(get zone_id)"
+            echo "PROJECT=$(get admin_project)"
+            echo "DOMAIN=$(get admin)"
+            echo "VITE_SERVER_URL=$(get api_url)"
+            # Login and token checks go to the admin backend's own Worker (auth.<domain>)
+            echo "VITE_ADMIN_BACKEND_URL=$(get auth_url)"
+          } >> "$GITHUB_ENV"
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+
+      - name: Build
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Create Pages project if missing
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT")
+          if [ "$code" = "404" ]; then
+            npx wrangler@4.149.0 pages project create "$PROJECT" --production-branch main
+          elif [ "$code" != "200" ]; then
+            echo "Pages API returned HTTP $code (token needs Account > Cloudflare Pages: Edit)"; exit 1
+          fi
+
+      - name: Deploy to Pages
+        run: |
+          npx wrangler@4.149.0 pages deploy dist --project-name "$PROJECT" --branch main --commit-dirty=true
+          echo "$PROJECT -> https://$PROJECT.pages.dev" >> "$GITHUB_STEP_SUMMARY"
+
+      # Attaches the custom domain to the Pages project and points a proxied CNAME at
+      # <project>.pages.dev (the API doesn't create the record the way the dashboard does).
+      # Token needs Zone > DNS: Edit. Domains this project no longer uses (after <ENV>_URL
+      # changed) are detached, and a CNAME still pointing at another of this stack's Pages
+      # projects is repointed, so a hostname can move between environments.
+      - name: Attach custom domain
+        if: env.DOMAIN != ''
+        run: |
+          api="https://api.cloudflare.com/client/v4"
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          project_api="$api/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/domains"
+          target="$PROJECT.pages.dev"
+
+          for old in $(curl -sf -H "$auth" "$project_api" | jq -r '.result[].name'); do
+            [ "$old" = "$DOMAIN" ] && continue
+            curl -sf -X DELETE -H "$auth" "$project_api/$old" > /dev/null
+            echo "Detached old domain $old from $PROJECT"
+          done
+
+          if [ "$(curl -s -o /dev/null -w '%{http_code}' -H "$auth" "$project_api/$DOMAIN")" != "200" ]; then
+            added=$(curl -s -X POST -H "$auth" -H 'Content-Type: application/json' \
+              --data "{\"name\":\"$DOMAIN\"}" "$project_api")
+            if [ "$(jq -r '.success' <<<"$added")" != "true" ]; then
+              echo "::error::Adding $DOMAIN to $PROJECT failed (still attached to another project?): $(jq -c '.errors' <<<"$added")"; exit 1
+            fi
+            echo "Added $DOMAIN to $PROJECT"
+          fi
+
+          # Fails loudly: without this record the Pages domain stays "pending" forever
+          records=$(curl -s -H "$auth" "$api/zones/$ZONE_ID/dns_records?name=$DOMAIN")
+          if [ "$(jq -r '.success' <<<"$records")" != "true" ]; then
+            echo "::error::Listing DNS records failed (token needs Zone > DNS: Edit): $(jq -c '.errors' <<<"$records")"; exit 1
+          fi
+          existing=$(jq -r '.result[] | "\(.type) \(.content)"' <<<"$records")
+          record='{"type":"CNAME","name":"'"$DOMAIN"'","content":"'"$target"'","proxied":true}'
+          if [ -z "$existing" ]; then
+            result=$(curl -s -X POST -H "$auth" -H 'Content-Type: application/json' --data "$record" \
+              "$api/zones/$ZONE_ID/dns_records")
+          elif [ "$existing" = "CNAME $target" ]; then
+            result='{"success":true}'
+          elif grep -Eqx 'CNAME prket-alandlos-[a-z0-9-]+\.pages\.dev' <<<"$existing"; then
+            id=$(jq -r '.result[0].id' <<<"$records")
+            result=$(curl -s -X PUT -H "$auth" -H 'Content-Type: application/json' --data "$record" \
+              "$api/zones/$ZONE_ID/dns_records/$id")
+          else
+            # Not overwritten automatically: it may be something set up on purpose
+            echo "::error::$DOMAIN already has other DNS records; delete them so a CNAME to $target can be created:"
+            echo "$existing"; exit 1
+          fi
+          if [ "$(jq -r '.success' <<<"$result")" != "true" ]; then
+            echo "::error::Writing CNAME $DOMAIN -> $target failed: $(jq -c '.errors' <<<"$result")"; exit 1
+          fi
+          echo "CNAME $DOMAIN -> $target"
+          echo "$PROJECT -> https://$DOMAIN" >> "$GITHUB_STEP_SUMMARY"

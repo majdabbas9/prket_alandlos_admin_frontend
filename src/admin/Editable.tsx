@@ -177,22 +177,27 @@ export function OpeningHoursText({
   );
 }
 
-/** Opens a file picker for an image; `compact` renders a small round pencil button */
+/**
+ * Opens a file picker for an image. `compact` renders a small round pencil button, `accent` a
+ * large brass pencil button for sitting on top of a photo.
+ */
 export function ImageButton({
   onFile,
   busy = false,
   label,
   compact = false,
+  accent = false,
   className = '',
 }: {
   onFile: (file: File) => void;
   busy?: boolean;
   label: string;
   compact?: boolean;
+  accent?: boolean;
   className?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const Icon = busy ? Loader2 : compact ? Pencil : ImagePlus;
+  const Icon = busy ? Loader2 : compact || accent ? Pencil : ImagePlus;
 
   return (
     <>
@@ -203,9 +208,11 @@ export function ImageButton({
         aria-label={label}
         title={label}
         className={
-          compact
-            ? `flex h-6 w-6 items-center justify-center rounded-full bg-brass-400 text-ink-950 shadow-card transition-transform hover:scale-110 disabled:opacity-70 ${className}`
-            : `inline-flex items-center gap-2 rounded-full bg-ink-950/75 px-4 py-2.5 text-xs font-semibold text-sand-50 shadow-lift backdrop-blur-md transition-colors hover:bg-ink-950/95 disabled:opacity-70 ${className}`
+          accent
+            ? `inline-flex items-center gap-2.5 rounded-full bg-brass-400 px-6 py-3.5 text-sm font-semibold text-ink-950 shadow-lift ring-4 ring-ink-950/20 transition-all hover:scale-105 hover:bg-brass-300 disabled:opacity-70 ${className}`
+            : compact
+              ? `flex h-6 w-6 items-center justify-center rounded-full bg-brass-400 text-ink-950 shadow-card transition-transform hover:scale-110 disabled:opacity-70 ${className}`
+              : `inline-flex items-center gap-2 rounded-full bg-ink-950/75 px-4 py-2.5 text-xs font-semibold text-sand-50 shadow-lift backdrop-blur-md transition-colors hover:bg-ink-950/95 disabled:opacity-70 ${className}`
         }
       >
         <Icon className={`${compact ? 'h-3 w-3' : 'h-4 w-4'} ${busy ? 'animate-spin' : ''}`} />

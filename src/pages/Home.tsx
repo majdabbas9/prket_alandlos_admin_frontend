@@ -62,9 +62,11 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-ink-950/70 via-transparent to-transparent" />
         </div>
 
-        <div className="absolute end-5 top-24 z-20 sm:end-8 lg:end-12">
+        {/* On the open part of the photo, across from the hero text */}
+        <div className="absolute end-5 top-24 z-20 sm:end-12 sm:top-1/2 sm:-translate-y-1/2 lg:end-[12%]">
           <ImageButton
-            label="Change homepage image"
+            accent
+            label="Edit image"
             busy={uploading.hero}
             onFile={(f) => void uploadImage('hero', f)}
           />

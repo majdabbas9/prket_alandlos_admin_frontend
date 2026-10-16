@@ -11,6 +11,8 @@ export interface Product {
   description: string;
   pricePerSqm: number;
   image: string;
+  /** Small variant for product cards; falls back to `image` */
+  thumbnail?: string;
   tag?: string;
 }
 

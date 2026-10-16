@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-
 export interface Stat {
   value: string;
   label: string;
 }
 
+/** Store info for one language, as GET /api/info?lang= returns it */
 export interface StoreInfo {
+  lang?: string;
   showPrice: boolean;
   storeOpeningTime: string;
   email: string;
@@ -23,13 +23,21 @@ export interface StoreInfo {
   heroEyebrow?: string;
   heroTitle?: string;
   heroDescription?: string;
+  productsEyebrow?: string;
+  productsTitle?: string;
+  productsDescription?: string;
 }
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:8080';
+// AM/PM markers across the supported languages (Arabic/Hebrew meridiem terms included)
+const MERIDIEM = '(?:AM|PM|am|pm|صباحًا|مساءً|לפנה״צ|אחה״צ)';
 
+/** Same split as the public site: "Sunday — Friday 10:00 AM — 6:00 PM" → days + time */
 export function parseOpeningTime(timeStr: string) {
-  const regex =
-    /^(.*?)\s+(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)\s*—\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))$/i;
+  // Meridiem markers are optional so 24-hour formats (e.g. Hebrew "10:00 — 18:00") also parse
+  const regex = new RegExp(
+    `^(.*?)\\s+(\\d{1,2}:\\d{2}\\s*${MERIDIEM}?\\s*—\\s*\\d{1,2}:\\d{2}\\s*${MERIDIEM}?)$`,
+    'i',
+  );
   const match = timeStr.match(regex);
   if (match) {
     return {
@@ -41,37 +49,4 @@ export function parseOpeningTime(timeStr: string) {
     days: timeStr,
     time: '',
   };
-}
-
-export function useInfo() {
-  const [info, setInfo] = useState<StoreInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const url = `${SERVER_URL}/api/info`;
-    console.log(`[API Request] GET ${url}`);
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('Failed to fetch store info');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.success && data.data) {
-          setInfo(data.data);
-        } else {
-          throw new Error(data.error || 'Invalid API response');
-        }
-      })
-      .catch((err) => {
-        setError(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
-
-  return { info, loading, error };
 }

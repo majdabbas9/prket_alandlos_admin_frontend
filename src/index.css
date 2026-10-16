@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -42,4 +42,55 @@
 .reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Language-specific fonts — Inter and Playfair Display have no Arabic/Hebrew glyphs */
+html[lang='ar'] body,
+html[lang='ar'] .font-display {
+  font-family: 'Cairo', 'Inter', system-ui, sans-serif;
+}
+html[lang='he'] body,
+html[lang='he'] .font-display {
+  font-family: 'Heebo', 'Inter', system-ui, sans-serif;
+}
+
+/* Letter-spacing breaks connected scripts (Arabic/Hebrew), so neutralize it in RTL */
+[dir='rtl'] .eyebrow,
+[dir='rtl'] [class*='tracking-'] {
+  letter-spacing: 0;
+}
+
+/* Admin: inline-editable text */
+.editable {
+  position: relative;
+  white-space: pre-wrap;
+  min-width: 2ch;
+  cursor: text;
+  border-radius: 0.25rem;
+  outline: 1px dashed transparent;
+  outline-offset: 3px;
+  transition:
+    outline-color 0.2s,
+    background-color 0.2s;
+}
+/* Tall glyphs (Arabic in Cairo) make a big heading's line box overhang the eyebrow above it,
+   which would swallow clicks meant for the eyebrow — so eyebrows sit on top */
+.editable.eyebrow {
+  z-index: 1;
+}
+.editable:hover {
+  outline-color: rgba(211, 166, 74, 0.8);
+}
+.editable:focus {
+  outline: 2px solid #d3a64a;
+  background-color: rgba(211, 166, 74, 0.08);
+}
+.editable[data-dirty='true'] {
+  outline: 2px solid #f59e0b;
+}
+/* Empty = the site shows its built-in text, previewed here as a placeholder */
+.editable:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.45;
+  font-style: italic;
 }

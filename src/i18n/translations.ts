@@ -104,6 +104,10 @@ const en = {
   'contact.fallbackTitle': "Let's talk about your floor",
   'contact.fallbackDescription':
     "Whether you're planning a renovation or just exploring finishes, our specialists are here to help. Reach out and we'll find the right wood for your space.",
+
+  // Admin
+  'admin.editImage': 'Edit image',
+  'admin.uploading': 'Uploading…',
 } as const;
 
 export type TranslationKey = keyof typeof en;
@@ -206,6 +210,10 @@ const ar: Record<TranslationKey, string> = {
   'contact.fallbackTitle': 'لنتحدث عن أرضيتكم',
   'contact.fallbackDescription':
     'سواء كنتم تخططون لتجديد أو تستكشفون التشطيبات فقط، متخصصونا هنا للمساعدة. تواصلوا معنا وسنجد الخشب المناسب لمساحتكم.',
+
+  // Admin
+  'admin.editImage': 'تعديل الصورة',
+  'admin.uploading': 'جارٍ الرفع…',
 };
 
 const he: Record<TranslationKey, string> = {
@@ -306,6 +314,10 @@ const he: Record<TranslationKey, string> = {
   'contact.fallbackTitle': 'בואו נדבר על הרצפה שלכם',
   'contact.fallbackDescription':
     'בין אם אתם מתכננים שיפוץ או רק בודקים גימורים, המומחים שלנו כאן כדי לעזור. צרו קשר ונמצא את העץ הנכון לחלל שלכם.',
+
+  // Admin
+  'admin.editImage': 'עריכת תמונה',
+  'admin.uploading': 'מעלה…',
 };
 
 export const translations: Record<Lang, Record<TranslationKey, string>> = { en, ar, he };

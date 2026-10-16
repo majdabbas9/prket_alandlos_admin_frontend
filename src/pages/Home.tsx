@@ -66,7 +66,7 @@ export default function Home() {
         <div className="absolute end-5 top-24 z-20 sm:end-12 sm:top-1/2 sm:-translate-y-1/2 lg:end-[12%]">
           <ImageButton
             accent
-            label="Edit image"
+            label={t('admin.editImage')}
             busy={uploading.hero}
             onFile={(f) => void uploadImage('hero', f)}
           />

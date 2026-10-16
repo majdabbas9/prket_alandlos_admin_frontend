@@ -196,6 +196,7 @@ export function ImageButton({
   accent?: boolean;
   className?: string;
 }) {
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const Icon = busy ? Loader2 : compact || accent ? Pencil : ImagePlus;
 
@@ -216,7 +217,7 @@ export function ImageButton({
         }
       >
         <Icon className={`${compact ? 'h-3 w-3' : 'h-4 w-4'} ${busy ? 'animate-spin' : ''}`} />
-        {!compact && (busy ? 'Uploading…' : label)}
+        {!compact && (busy ? t('admin.uploading') : label)}
       </button>
       <input
         ref={inputRef}

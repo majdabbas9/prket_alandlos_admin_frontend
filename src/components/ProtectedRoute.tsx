@@ -10,6 +10,8 @@ export default function ProtectedRoute() {
   useEffect(() => {
     const validateToken = async () => {
       if (!token || token === 'undefined' || token === 'null') {
+        // Drop a junk token, or the login page (which sees a token) sends us straight back here
+        localStorage.removeItem('admin_token');
         setIsValid(false);
         setIsValidating(false);
         return;

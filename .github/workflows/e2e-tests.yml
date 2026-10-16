@@ -1,0 +1,131 @@
+name: E2E Tests
+
+# Playwright (e2e/) against the deployed admin site - the custom domain from <ENV>_URL, else
+# <project>.pages.dev - and the live API and auth Workers it was built against.
+# Called by cd.yml right after its deploy, or run by hand.
+#   e2e/mocked - always; every backend call is intercepted in the browser, nothing is written
+#   e2e/live   - only when the admin login secrets are set. Writes to the shared database and
+#                R2 bucket are limited to an e2e-<timestamp> product that the test deletes again.
+#   vars:    DEV_/PROD_ CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_DATABASE_ID, URL (to resolve the URLs
+#            with prket_alandlos_infra's scripts/env-config.mjs)
+#   secrets: DEV_/PROD_ CLOUDFLARE_API_TOKEN
+#            DEV_/PROD_ ADMIN_USERNAME, ADMIN_PASSWORD (the D1 admin user that
+#            prket_alandlos_infra's provision seeds; unprefixed ADMIN_* as a fallback, as there)
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'dev or prod'
+        type: string
+        default: 'dev'
+      version:
+        description: 'Commit the site must be serving (dist/version.txt) before the tests start'
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        type: choice
+        options: ['dev', 'prod']
+        default: 'dev'
+
+concurrency:
+  group: e2e-tests-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ENV_NAME: ${{ inputs.environment || 'dev' }}
+      PREFIX: ${{ (inputs.environment || 'dev') == 'prod' && 'PROD' || 'DEV' }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout prket_alandlos_infra scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/prket_alandlos_infra
+          ref: master
+          path: .infra
+          sparse-checkout: scripts
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Resolve site, API and auth URLs
+        run: |
+          node .infra/scripts/env-config.mjs > "$RUNNER_TEMP/config"
+          get() { sed -n "s/^$1=//p" "$RUNNER_TEMP/config"; }
+          admin=$(get admin)
+          {
+            echo "BASE_URL=https://${admin:-$(get admin_project).pages.dev}"
+            echo "API_URL=$(get api_url)"
+            echo "AUTH_URL=$(get auth_url)"
+          } >> "$GITHUB_ENV"
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets[format('{0}_CLOUDFLARE_API_TOKEN', env.PREFIX)] }}
+
+      # Pages publishes within seconds, but a new custom domain can take minutes to get its
+      # certificate. With a version, wait until the site serves exactly that build.
+      - name: Wait for the site
+        run: |
+          for _ in $(seq 1 60); do
+            served=$(curl -sf --max-time 10 "$BASE_URL/version.txt?nocache=$RANDOM" || true)
+            if [ -z "$VERSION" ] && [ -n "$served" ]; then echo "$BASE_URL is up"; exit 0; fi
+            if [ -n "$VERSION" ] && [ "$served" = "$VERSION" ]; then echo "$BASE_URL serves $VERSION"; exit 0; fi
+            sleep 5
+          done
+          echo "$BASE_URL did not serve ${VERSION:-anything} within 5 min (last: ${served:0:80})"; exit 1
+
+      # The API container may be cold or still rolling out. Only the live tests need it, and they
+      # skip themselves if it stays down, so this waits but never fails the job.
+      - name: Wait for the API
+        run: |
+          [ -n "$ADMIN_PASSWORD" ] || exit 0
+          for _ in $(seq 1 60); do
+            if curl -sf --max-time 10 -o /dev/null "$API_URL/api/info?lang=en"; then
+              echo "API is up at $API_URL"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::warning::API at $API_URL/api/info not available after 5 min; live tests will skip"
+        env:
+          ADMIN_PASSWORD: ${{ secrets[format('{0}_ADMIN_PASSWORD', env.PREFIX)] || secrets.ADMIN_PASSWORD }}
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: |
+          if [ -n "$ADMIN_PASSWORD" ]; then
+            echo "Testing $BASE_URL (API $API_URL, auth $AUTH_URL)"
+            npx playwright test
+          else
+            echo "::notice::${PREFIX}_ADMIN_PASSWORD is not set; running only the mocked suite"
+            npx playwright test --project=mocked
+          fi
+        env:
+          ADMIN_USERNAME: ${{ secrets[format('{0}_ADMIN_USERNAME', env.PREFIX)] || secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets[format('{0}_ADMIN_PASSWORD', env.PREFIX)] || secrets.ADMIN_PASSWORD }}
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ env.ENV_NAME }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore

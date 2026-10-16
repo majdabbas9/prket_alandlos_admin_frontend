@@ -3,3 +3,6 @@ dist
 coverage
 uploads
 package-lock.json
+test-results
+playwright-report
+blob-report

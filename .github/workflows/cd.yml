@@ -1,12 +1,14 @@
 name: CD
 
 # On every push to main (and by hand): build the admin site and publish it to Cloudflare Pages,
-# once per environment. VITE_* URLs are baked in at build time, so each environment's build
-# points at that environment's API and auth Workers. (Tests come later.)
+# once per environment, after lint, typecheck and unit tests. VITE_* URLs are baked in at build
+# time, so each environment's build points at that environment's API and auth Workers.
+# Then e2e-tests.yml runs Playwright against the deployed dev site.
 # Names and hostnames come from prket_alandlos_infra's scripts/env-config.mjs.
 # dev and prod are separate Cloudflare accounts; only dev is wired up so far (matrix.include).
 #   vars:    DEV_/PROD_ CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_DATABASE_ID, URL
 #   secrets: DEV_/PROD_ CLOUDFLARE_API_TOKEN (Cloudflare Pages: Edit, Zone > DNS: Edit)
+#            DEV_/PROD_ ADMIN_USERNAME, ADMIN_PASSWORD (optional, e2e live login; see e2e-tests.yml)
 on:
   push:
     branches: ['main', 'master']
@@ -64,10 +66,21 @@ jobs:
         env:
           VARS_JSON: ${{ toJSON(vars) }}
 
+      - run: npm ci --no-audit --no-fund
+
+      # Unit/component tests (Vitest); a failure stops the deploy. The Playwright suite (e2e/)
+      # needs a browser and, for e2e/live, a running backend, so it is not run here.
+      - name: Lint, typecheck and unit tests
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+
+      # version.txt lets the e2e job wait until this exact build is the one being served
       - name: Build
         run: |
-          npm ci --no-audit --no-fund
           npm run build
+          echo "$GITHUB_SHA" > dist/version.txt
 
       - name: Create Pages project if missing
         run: |
@@ -138,3 +151,11 @@ jobs:
           fi
           echo "CNAME $DOMAIN -> $target"
           echo "$PROJECT -> https://$DOMAIN" >> "$GITHUB_STEP_SUMMARY"
+
+  e2e:
+    needs: deploy
+    uses: ./.github/workflows/e2e-tests.yml
+    with:
+      environment: dev
+      version: ${{ github.sha }}
+    secrets: inherit
